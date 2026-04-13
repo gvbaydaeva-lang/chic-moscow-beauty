@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { services, masters, categories, type ServiceCategory } from "@/data/services";
+import { supabase } from "@/integrations/supabase/client";
+import { categories } from "@/data/services";
 import { toast } from "@/hooks/use-toast";
 
 interface BookingModalProps {
@@ -14,25 +16,63 @@ const BookingModal = ({ trigger, preselectedServiceId }: BookingModalProps) => {
     name: "",
     phone: "",
     serviceId: preselectedServiceId || "",
-    masterName: "",
+    masterId: "",
     date: "",
     time: "",
+    comment: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const { data: services = [] } = useQuery({
+    queryKey: ["public-services"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("services").select("*").eq("is_active", true).order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: masters = [] } = useQuery({
+    queryKey: ["public-masters"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("masters").select("*").eq("is_active", true).order("sort_order");
+      if (error) throw error;
+      return data;
+    },
   });
 
   const selectedService = services.find(s => s.id === form.serviceId);
   const categoryMasters = selectedService
-    ? masters.filter(m => m.specialties.includes(selectedService.category))
+    ? masters.filter(m => m.specialties?.includes(selectedService.category))
     : masters;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, just show success toast. DB integration later.
-    toast({
-      title: "Заявка отправлена!",
-      description: "Мы свяжемся с вами для подтверждения записи.",
+    setSubmitting(true);
+
+    const service = services.find(s => s.id === form.serviceId);
+    const master = masters.find(m => m.id === form.masterId);
+
+    const { error } = await supabase.from("appointments").insert({
+      client_name: form.name,
+      client_phone: form.phone,
+      service_id: form.serviceId || null,
+      master_id: form.masterId || null,
+      service_name: service?.title || "",
+      master_name: master?.name || "",
+      appointment_date: form.date,
+      appointment_time: form.time,
+      comment: form.comment || null,
     });
-    setOpen(false);
-    setForm({ name: "", phone: "", serviceId: "", masterName: "", date: "", time: "" });
+
+    if (error) {
+      toast({ title: "Ошибка", description: "Не удалось отправить заявку", variant: "destructive" });
+    } else {
+      toast({ title: "Заявка отправлена!", description: "Мы свяжемся с вами для подтверждения записи." });
+      setOpen(false);
+      setForm({ name: "", phone: "", serviceId: "", masterId: "", date: "", time: "", comment: "" });
+    }
+    setSubmitting(false);
   };
 
   return (
@@ -45,83 +85,62 @@ const BookingModal = ({ trigger, preselectedServiceId }: BookingModalProps) => {
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-1 block">Ваше имя</label>
-            <input
-              type="text"
-              required
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
-              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            />
+            <input type="text" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring" />
           </div>
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-1 block">Телефон</label>
-            <input
-              type="tel"
-              required
-              value={form.phone}
-              onChange={e => setForm({ ...form, phone: e.target.value })}
-              placeholder="+7 (___) ___-__-__"
-              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            />
+            <input type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+7 (___) ___-__-__"
+              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring" />
           </div>
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-1 block">Услуга</label>
-            <select
-              required
-              value={form.serviceId}
-              onChange={e => setForm({ ...form, serviceId: e.target.value, masterName: "" })}
-              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            >
+            <select required value={form.serviceId} onChange={e => setForm({ ...form, serviceId: e.target.value, masterId: "" })}
+              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring">
               <option value="">Выберите услугу</option>
-              {categories.map(cat => (
-                <optgroup key={cat.id} label={cat.title}>
-                  {services.filter(s => s.category === cat.id).map(s => (
-                    <option key={s.id} value={s.id}>{s.title} — {s.price.toLocaleString("ru-RU")} ₽</option>
-                  ))}
-                </optgroup>
-              ))}
+              {categories.map(cat => {
+                const catServices = services.filter(s => s.category === cat.id);
+                if (catServices.length === 0) return null;
+                return (
+                  <optgroup key={cat.id} label={cat.title}>
+                    {catServices.map(s => (
+                      <option key={s.id} value={s.id}>{s.title} — {s.price.toLocaleString("ru-RU")} ₽</option>
+                    ))}
+                  </optgroup>
+                );
+              })}
             </select>
           </div>
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-1 block">Мастер</label>
-            <select
-              value={form.masterName}
-              onChange={e => setForm({ ...form, masterName: e.target.value })}
-              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            >
+            <select value={form.masterId} onChange={e => setForm({ ...form, masterId: e.target.value })}
+              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring">
               <option value="">Любой мастер</option>
               {categoryMasters.map(m => (
-                <option key={m.id} value={m.name}>{m.name} — {m.role}</option>
+                <option key={m.id} value={m.id}>{m.name} — {m.role}</option>
               ))}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">Дата</label>
-              <input
-                type="date"
-                required
-                value={form.date}
-                onChange={e => setForm({ ...form, date: e.target.value })}
-                className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
+              <input type="date" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
+                className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring" />
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">Время</label>
-              <input
-                type="time"
-                required
-                value={form.time}
-                onChange={e => setForm({ ...form, time: e.target.value })}
-                className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
+              <input type="time" required value={form.time} onChange={e => setForm({ ...form, time: e.target.value })}
+                className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring" />
             </div>
           </div>
-          <button
-            type="submit"
-            className="w-full bg-primary text-primary-foreground py-3 text-sm font-medium tracking-wide hover:bg-primary/90 transition-colors rounded-sm"
-          >
-            Отправить заявку
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-1 block">Комментарий</label>
+            <textarea value={form.comment} onChange={e => setForm({ ...form, comment: e.target.value })} rows={2} placeholder="Пожелания (необязательно)"
+              className="w-full border border-input bg-background px-3 py-2 text-sm rounded-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+          <button type="submit" disabled={submitting}
+            className="w-full bg-primary text-primary-foreground py-3 text-sm font-medium tracking-wide hover:bg-primary/90 transition-colors rounded-sm disabled:opacity-50">
+            {submitting ? "Отправка..." : "Отправить заявку"}
           </button>
         </form>
       </DialogContent>

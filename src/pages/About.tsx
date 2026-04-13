@@ -1,8 +1,29 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { masters } from "@/data/services";
 import heroImage from "@/assets/hero-salon.jpg";
 
 const About = () => {
+  const { data: masters = [] } = useQuery({
+    queryKey: ["public-masters"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("masters").select("*").eq("is_active", true).order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: settings = [] } = useQuery({
+    queryKey: ["public-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("salon_settings").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const getSetting = (key: string) => settings.find(s => s.key === key)?.value || "";
+
   return (
     <Layout>
       {/* Hero */}
@@ -22,7 +43,7 @@ const About = () => {
         <div className="container mx-auto px-6 max-w-3xl">
           <h2 className="font-heading text-3xl font-light mb-6 text-center italic">Наша философия</h2>
           <p className="text-muted-foreground leading-relaxed mb-4">
-            TERRA — это место, где красота рождается из внимания к деталям. Мы основали салон в 2018 году с простой идеей: создать пространство, где каждый гость чувствует себя особенным.
+            {getSetting("about_text") || "TERRA — это место, где красота рождается из внимания к деталям. Мы основали салон в 2018 году с простой идеей: создать пространство, где каждый гость чувствует себя особенным."}
           </p>
           <p className="text-muted-foreground leading-relaxed mb-4">
             Наш подход — это баланс между технологиями и чуткостью. Мы не гонимся за трендами, а предлагаем решения, которые подчёркивают индивидуальность каждого клиента.
@@ -43,11 +64,15 @@ const About = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {masters.map(master => (
               <div key={master.id} className="bg-card rounded-sm p-8 text-center">
-                <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
-                  <span className="font-heading text-xl text-muted-foreground">
-                    {master.name.split(" ").map(n => n[0]).join("")}
-                  </span>
-                </div>
+                {master.image_url ? (
+                  <img src={master.image_url} alt={master.name} className="w-20 h-20 mx-auto rounded-full object-cover mb-4" />
+                ) : (
+                  <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
+                    <span className="font-heading text-xl text-muted-foreground">
+                      {master.name.split(" ").map((n: string) => n[0]).join("")}
+                    </span>
+                  </div>
+                )}
                 <h3 className="font-heading text-xl font-medium mb-1">{master.name}</h3>
                 <p className="text-primary text-sm font-medium mb-2">{master.role}</p>
                 <p className="text-xs text-muted-foreground">Опыт работы: {master.experience}</p>
@@ -64,18 +89,22 @@ const About = () => {
             <p className="text-sm tracking-[0.2em] uppercase text-muted-foreground mb-2">Качество</p>
             <h2 className="font-heading text-4xl font-light">Оборудование и косметика</h2>
           </div>
-          <div className="space-y-6">
-            {[
-              { title: "Профессиональная косметика", desc: "Мы работаем с брендами Kerastase, Wella, OPI, Dermalogica и другими лидерами индустрии." },
-              { title: "Современное оборудование", desc: "Лазерные аппараты, LED-лампы, массажные столы премиум-класса — мы инвестируем в лучшее." },
-              { title: "Стерильность и безопасность", desc: "Все инструменты проходят многоступенчатую стерилизацию. Одноразовые материалы — стандарт." },
-            ].map((item, i) => (
-              <div key={i} className="border-l-2 border-primary pl-6">
-                <h3 className="font-heading text-xl font-medium mb-2">{item.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
+          {getSetting("equipment_text") ? (
+            <p className="text-muted-foreground leading-relaxed text-center">{getSetting("equipment_text")}</p>
+          ) : (
+            <div className="space-y-6">
+              {[
+                { title: "Профессиональная косметика", desc: "Мы работаем с брендами Kerastase, Wella, OPI, Dermalogica и другими лидерами индустрии." },
+                { title: "Современное оборудование", desc: "Лазерные аппараты, LED-лампы, массажные столы премиум-класса — мы инвестируем в лучшее." },
+                { title: "Стерильность и безопасность", desc: "Все инструменты проходят многоступенчатую стерилизацию. Одноразовые материалы — стандарт." },
+              ].map((item, i) => (
+                <div key={i} className="border-l-2 border-primary pl-6">
+                  <h3 className="font-heading text-xl font-medium mb-2">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </Layout>
