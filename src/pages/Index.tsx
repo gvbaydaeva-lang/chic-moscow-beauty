@@ -160,8 +160,8 @@ const Index = () => {
           </p>
           <BookingModal
             trigger={
-              <button className="bg-primary-foreground text-foreground px-8 py-3 text-sm font-medium tracking-wide hover:bg-primary-foreground/90 transition-colors rounded-sm">
-                Записаться на приём
+              <button className="px-8 py-3 text-sm font-medium tracking-wide transition-colors rounded-sm text-secondary-foreground bg-primary-foreground">
+                Запись на услугу
               </button>
             }
           />
