@@ -1,12 +1,23 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import BookingModal from "@/components/BookingModal";
-import { categories, services, type ServiceCategory } from "@/data/services";
+import { categories, type ServiceCategory } from "@/data/services";
 
 const Services = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategory = (searchParams.get("category") as ServiceCategory) || null;
+
+  const { data: services = [] } = useQuery({
+    queryKey: ["public-services"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("services").select("*").eq("is_active", true).order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const filtered = activeCategory
     ? services.filter(s => s.category === activeCategory)
@@ -21,7 +32,6 @@ const Services = () => {
             <h1 className="font-heading text-4xl md:text-5xl font-light">Наши услуги</h1>
           </div>
 
-          {/* Category Filters */}
           <div className="flex flex-wrap justify-center gap-3 mb-12">
             <button
               onClick={() => setSearchParams({})}
@@ -44,27 +54,31 @@ const Services = () => {
             ))}
           </div>
 
-          {/* Services Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map(service => (
-              <div key={service.id} className="bg-card border border-border rounded-sm p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-heading text-xl font-medium">{service.title}</h3>
-                  <span className="text-primary font-medium text-sm whitespace-nowrap ml-4">
-                    {service.price.toLocaleString("ru-RU")} ₽
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">{service.description}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{service.duration}</span>
-                  <BookingModal
-                    preselectedServiceId={service.id}
-                    trigger={
-                      <button className="text-primary text-sm font-medium hover:underline">
-                        Записаться →
-                      </button>
-                    }
-                  />
+              <div key={service.id} className="bg-card border border-border rounded-sm overflow-hidden hover:shadow-md transition-shadow">
+                {service.image_url && (
+                  <img src={service.image_url} alt={service.title} className="w-full h-40 object-cover" />
+                )}
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-heading text-xl font-medium">{service.title}</h3>
+                    <span className="text-primary font-medium text-sm whitespace-nowrap ml-4">
+                      {service.price.toLocaleString("ru-RU")} ₽
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">{service.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{service.duration}</span>
+                    <BookingModal
+                      preselectedServiceId={service.id}
+                      trigger={
+                        <button className="text-primary text-sm font-medium hover:underline">
+                          Записаться →
+                        </button>
+                      }
+                    />
+                  </div>
                 </div>
               </div>
             ))}
