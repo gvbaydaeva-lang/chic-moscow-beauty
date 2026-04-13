@@ -51,8 +51,8 @@ export const services: Service[] = [
 ];
 
 export const masters = [
-  { id: "1", name: "Анна Кузнецова", role: "Топ-стилист", specialties: ["hair"], experience: "12 лет" },
-  { id: "2", name: "Мария Иванова", role: "Мастер маникюра", specialties: ["nails"], experience: "8 лет" },
+  { id: "1", name: "Анна Иванова", role: "Топ-стилист", specialties: ["hair"], experience: "12 лет" },
+  { id: "2", name: "Мария Бадмаева", role: "Мастер маникюра", specialties: ["nails"], experience: "8 лет" },
   { id: "3", name: "Елена Петрова", role: "Косметолог", specialties: ["skincare"], experience: "10 лет" },
   { id: "4", name: "Ольга Смирнова", role: "Массажист", specialties: ["massage"], experience: "6 лет" },
   { id: "5", name: "Дарья Волкова", role: "Визажист", specialties: ["makeup"], experience: "9 лет" },
