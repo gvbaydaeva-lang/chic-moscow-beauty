@@ -36,40 +36,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Promotions */}
-      {promotions.length > 0 && (
-        <section className="py-20 bg-primary/5">
-          <div className="container mx-auto px-6">
-            <div className="text-center mb-14">
-              <p className="text-sm tracking-[0.2em] uppercase text-muted-foreground mb-2">Специальные предложения</p>
-              <h2 className="font-heading text-4xl md:text-5xl font-light">Акции</h2>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {promotions.map(p => (
-                <div key={p.id} className="bg-card border border-border rounded-sm overflow-hidden">
-                  {p.image_url && <img src={p.image_url} alt={p.title} className="w-full h-48 object-cover" />}
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-heading text-xl font-medium">{p.title}</h3>
-                      {p.discount_percent && (
-                        <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-sm">
-                          −{p.discount_percent}%
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{p.description}</p>
-                    {(p.start_date || p.end_date) && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {p.start_date && `с ${p.start_date}`} {p.end_date && `по ${p.end_date}`}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* About Preview */}
       <section className="py-20 bg-muted">
