@@ -14,7 +14,7 @@ import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import AdminServicesRoute from "./pages/AdminServicesRoute";
 import AdminMastersRoute from "./pages/AdminMastersRoute";
-import AdminPromotionsRoute from "./pages/AdminPromotionsRoute";
+
 import AdminSettingsRoute from "./pages/AdminSettingsRoute";
 import AdminChatsRoute from "./pages/AdminChatsRoute";
 import NotFound from "./pages/NotFound";
@@ -39,7 +39,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/services" element={<AdminServicesRoute />} />
             <Route path="/admin/masters" element={<AdminMastersRoute />} />
-            <Route path="/admin/promotions" element={<AdminPromotionsRoute />} />
+            
             <Route path="/admin/settings" element={<AdminSettingsRoute />} />
             <Route path="/admin/chats" element={<AdminChatsRoute />} />
             <Route path="*" element={<NotFound />} />

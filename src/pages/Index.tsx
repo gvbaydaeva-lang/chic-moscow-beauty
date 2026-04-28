@@ -17,15 +17,6 @@ const Index = () => {
     },
   });
 
-  const { data: promotions = [] } = useQuery({
-    queryKey: ["public-promotions"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("promotions").select("*").eq("is_active", true);
-      if (error) throw error;
-      return data;
-    },
-  });
-
   return (
     <Layout>
       <HeroSection />
