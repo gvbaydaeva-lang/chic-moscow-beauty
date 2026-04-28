@@ -1,4 +1,4 @@
-import { Calendar, Scissors, Users, Sparkles, Settings, LogOut, MessageSquare } from "lucide-react";
+import { Calendar, Scissors, Users, Settings, LogOut, MessageSquare } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +20,6 @@ const items = [
   { title: "Чаты", url: "/admin/chats", icon: MessageSquare },
   { title: "Услуги", url: "/admin/services", icon: Scissors },
   { title: "Мастера", url: "/admin/masters", icon: Users },
-  { title: "Акции", url: "/admin/promotions", icon: Sparkles },
   { title: "Настройки", url: "/admin/settings", icon: Settings },
 ];
 
